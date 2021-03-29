@@ -9,7 +9,8 @@
 # @param alpha numeric significance level for Tukey's mean comparison [default=0.05]
 # @param LOG logical referring to whether to transform the explanatory variable into the logarithm scale [default=FALSE]
 # @param BASE numeric referring to the logarithm base to transform the explanatory variable with [default=1]
-# @param PLOT logical referring to whether plot the mean comparison grouping letters into an existing plot [default=FALSE]
+# @param PLOT logical referring to whether or not to plot the mean comparison grouping letters into an existing plot [default=FALSE]
+# @param SHOW_SAMPLE_SIZE logical referring to whether or not to show the sample sizes of each factor level into an existing plot [default=FALSE]
 #
 # @return Tukey's honest significant difference grouping table with response variable categorical means, grouping, level names and corresponding numeric counterparts
 # @return Appends honest significant difference grouping letters into an existing plot
@@ -28,7 +29,9 @@
 #' @importFrom stats aov anova sd
 #' @importFrom graphics text
 #
-mean_comparison_HSD = function(formula, data=NULL, explanatory_variable_name, alpha=0.05, LOG=FALSE, BASE=10, PLOT=FALSE) {
+mean_comparison_HSD = function(formula, data=NULL, explanatory_variable_name, alpha=0.05, LOG=FALSE, BASE=10, PLOT=FALSE, SHOW_SAMPLE_SIZE=FALSE) {
+  ### FOR TESTING:
+  # data=NULL; explanatory_variable_name; alpha=0.05; LOG=FALSE; BASE=10; PLOT=FALSE; SHOW_SAMPLE_SIZE=FALSE
   ### parse the formula and generate the dataframe with explicit interaction terms if expressed in the formula
   df = parse_formula(formula=formula, data=data, IMPUTE=FALSE, IMPUTE_METHOD=mean)
   response_var = df[,1]; response_var_name = colnames(df)[1]
@@ -46,7 +49,9 @@ mean_comparison_HSD = function(formula, data=NULL, explanatory_variable_name, al
   colnames(means) = c("LEVELS", "MEANS")
   means = means[order(means$MEANS, decreasing=TRUE), ]
   ### compute the HSD pairwise comparison
-  hsd = eval(parse(text=paste0("as.data.frame(TukeyHSD(mod, conf.level=", 1.00-alpha, ")$`", explanatory_variable_name, "`)")))
+  tryCatch(eval(parse(text=paste0("mod$model$`", explanatory_variable_name, "` = as.factor(mod$model$`", explanatory_variable_name, "`)"))),
+    error=function(e){})
+  hsd = suppressWarnings(eval(parse(text=paste0("as.data.frame(TukeyHSD(mod, conf.level=", 1.00-alpha, ")$`", explanatory_variable_name, "`)"))))
   ### add "LEVEL_" string to allow for explanatory variable that are originally numeric to be easily set as list names
   factor_labels = matrix(paste0("LEVEL_", unlist(strsplit(rownames(hsd), "-"))), ncol=2, byrow=TRUE)
   hsd$factor1 = factor_labels[,1]
@@ -109,6 +114,13 @@ mean_comparison_HSD = function(formula, data=NULL, explanatory_variable_name, al
   MERGE_GROUPING_DF = merge(merge(GROUPING_LIST, X_LEVELS_AND_NUMBERS, by="LEVELS"), means, by="LEVELS")
   if(PLOT){
     text(x=MERGE_GROUPING_DF$NUMBERS, y=max(response_var)+sd(response_var), lab=as.character(MERGE_GROUPING_DF$GROUPING))
+  }
+  if(SHOW_SAMPLE_SIZE){
+    sample_sizes = table(eval(parse(text=paste0("df$`", explanatory_variable_name, "`"))))
+    SAMPLE_SIZES = as.data.frame(sample_sizes)
+    colnames(SAMPLE_SIZES) = c("LEVELS", "SAMPLE_SIZES")
+    MERGE_GROUPING_DF = merge(MERGE_GROUPING_DF, SAMPLE_SIZES, by="LEVELS")
+    text(x=MERGE_GROUPING_DF$NUMBERS, y=max(response_var)+(sd(response_var)/4), lab=paste0("(n=", MERGE_GROUPING_DF$SAMPLE_SIZES, ")"))
   }
   return(MERGE_GROUPING_DF)
 }
