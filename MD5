@@ -1,12 +1,12 @@
-9bd9db82bcbb61eac7b576d02e827b05 *DESCRIPTION
+177cc844151668219d021b73f4b236d7 *DESCRIPTION
 8120a4c06f4d21ca01c1f8d7af84c1d2 *NAMESPACE
-5f9568eb79e27e3b3e43bb633c1ce5e4 *NEWS.md
+e00499658d2cd6f7a54e7c423c0d4648 *NEWS.md
 269d817c84db237cdb86ea420af43dfe *R/data.R
 34c3c51dacc0a96e828d6360ce1c44df *R/mean_comparison_HSD.R
 08d4494dbd2610516de9ea018dfa497e *R/parse_formula.R
-2e107a0cf3c8c1337b91763591c27ffc *R/plot_regression_line.R
+cac57c0459dd5d942403bee918247dfe *R/plot_regression_line.R
 caa7cae76360fdf50794a0aab2a065df *R/plot_violin_1x.R
-a1ee0f2cc81f5cd94afb60188b76b97a *R/violinplotter.R
+647364cf146800103d3ca66a785601d7 *R/violinplotter.R
 51e6152f878b3c3263278025cef73e60 *README.md
 3ffa8c4560f5346cb2f53d0ddbfe718f *data/dummy_data.RData
 aaf75eeb499d78882d0930a2304a0de5 *data/dummy_data.csv
