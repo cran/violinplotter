@@ -1,12 +1,22 @@
 #' Plotting and Comparing Means with Violin Plots
 #'
-#' @usage violinplotter(formula, data=NULL, TITLE="", XLAB="", YLAB="",
-#'  VIOLIN_COLOURS=c("#e0f3db","#ccebc5","#a8ddb5","#7bccc4","#4eb3d3","#2b8cbe"),
-#'  PLOT_BARS=TRUE,
-#'  ERROR_BAR_COLOURS=c("#636363","#1c9099","#de2d26"),
-#'  SHOW_SAMPLE_SIZE=TRUE,
-#'  XCATEGOR=TRUE, LOGX=FALSE, LOGX_BASE=10, HSDX=TRUE,
-#'  ALPHA=0.05, REGRESSX=FALSE)
+#' @usage violinplotter(formula, 
+#'                      data=NULL, 
+#'                      TITLE="", 
+#'                      XLAB="", 
+#'                      YLAB="", 
+#'                      VIOLIN_COLOURS=c("#e0f3db","#a8ddb5","#7bccc4","#2b8cbe"), 
+#'                      PLOT_BARS=TRUE, 
+#'                      ERROR_BAR_COLOURS=c("#636363","#1c9099","#de2d26"), 
+#'                      SHOW_SAMPLE_SIZE=FALSE, 
+#'                      SHOW_MEANS=TRUE, 
+#'                      CATEGORICAL=TRUE, 
+#'                      LOGX=FALSE, 
+#'                      LOGX_BASE=10, 
+#'                      MANN_WHITNEY=TRUE, 
+#'                      HSD=FALSE, 
+#'                      ALPHA=0.05, 
+#'                      REGRESS=FALSE)
 #'
 #' @param formula R's compact symbolic form to represent linear models with fixed additive and interaction effects (See ?formula for more information) [mandatory]
 #' @param data data.frame containing the response and explanatory variables which forms the formula above [default=NULL]
@@ -16,13 +26,15 @@
 #' @param VIOLIN_COLOURS vector or list of vectors of colors of the violin plots which are repeated if the length is less than the number of explanatory factor levels or less than the number of explanatory factors in the case of a list [default=c("#e0f3db", "#ccebc5", "#a8ddb5", "#7bccc4", "#4eb3d3", "#2b8cbe")]
 #' @param PLOT_BARS logical (i.e. TRUE or FALSE) to plot all or none of the bars; or vector strings which bars to plot (e.g. "stdev", "sterr", "ci") [default=TRUE=c("stdev", "sterr", "ci")]
 #' @param ERROR_BAR_COLOURS vector of colors of standard deviation, standard error and 95 percent confidence interval error bars (error bar selection via leaving one of the three colors empty) [default=c("#636363", "#1c9099", "#de2d26")]
-#' @param SHOW_SAMPLE_SIZE logical referring to whether or not to show the sample sizes for each category [default=TRUE]
-#' @param XCATEGOR logical or vector of logicals referring to whether the explanatory variable/s is/are strictly categorical [default=TRUE]
+#' @param SHOW_SAMPLE_SIZE logical referring to whether or not to show the sample sizes for each category [default=FALSE]
+#' @param SHOW_MEANS logical referring to whether or not to show the means [default=TRUE]
+#' @param CATEGORICAL logical or vector of logicals referring to whether the explanatory variable/s is/are strictly categorical [default=TRUE]
 #' @param LOGX logical or vector of logicals referring to whether to transform the explanatory variable/s into the logarithm scale [default=FALSE]
 #' @param LOGX_BASE numeric or vector of numerics referring to the logarithm base to transform the explanatory variable/s with [default=1]
-#' @param HSDX logical or vector of logicals referring to whether to perform Tukey's Honest Significance Grouping [default=TRUE]
+#' @param MANN_WHITNEY logical or vector of logicals referring to whether to perform Mann-Whitney Grouping [default=TRUE]
+#' @param HSD logical or vector of logicals referring to whether to perform Tukey's Honest Significance Grouping [default=FALSE]
 #' @param ALPHA numeric significance level for the analysis of variance F-test and Tukey's mean comparison [default=0.05]
-#' @param REGRESSX logical or vector of logicals referring to whether to regress the response variable against the explanatory variable/s [default=FALSE]
+#' @param REGRESS logical or vector of logicals referring to whether to regress the response variable against the explanatory variable/s [default=FALSE]
 #'
 #' @return Violin plot/s with optional error bars, mean comparison grouping/s, and regression line/s
 #' @return Mean comparison grouping/s based on Tukey's Hones significant difference and regression line statistics, if applicable
@@ -39,10 +51,27 @@
 #' @importFrom grDevices rgb
 #'
 #' @export
-violinplotter = function(formula, data=NULL, TITLE="", XLAB="", YLAB="", VIOLIN_COLOURS=c("#e0f3db", "#ccebc5", "#a8ddb5", "#7bccc4", "#4eb3d3", "#2b8cbe"), PLOT_BARS=TRUE, ERROR_BAR_COLOURS=c("#636363", "#1c9099", "#de2d26"), SHOW_SAMPLE_SIZE=TRUE, XCATEGOR=TRUE, LOGX=FALSE, LOGX_BASE=10, HSDX=TRUE, ALPHA=0.05, REGRESSX=FALSE){
+violinplotter = function(formula, 
+                         data=NULL, 
+                         TITLE="", 
+                         XLAB="", 
+                         YLAB="", 
+                         VIOLIN_COLOURS=c("#e0f3db","#a8ddb5","#7bccc4","#2b8cbe"), 
+                         PLOT_BARS=TRUE, 
+                         ERROR_BAR_COLOURS=c("#636363","#1c9099","#de2d26"), 
+                         SHOW_SAMPLE_SIZE=FALSE, 
+                         SHOW_MEANS=TRUE, 
+                         CATEGORICAL=TRUE, 
+                         LOGX=FALSE, 
+                         LOGX_BASE=10, 
+                         MANN_WHITNEY=TRUE, 
+                         HSD=FALSE, 
+                         ALPHA=0.05, 
+                         REGRESS=FALSE){
   ### FOR TESTING: load the parsing, plotting, HSD, and regressing functions
   # source("parse_formula.R")
   # source("plot_violin_1x.R")
+  # source("show_means_sample_sizes.R")
   # source("mean_comparison_HSD.R")
   # source("plot_regression_line.R")
   # source("violinplotter.R")
@@ -58,8 +87,8 @@ violinplotter = function(formula, data=NULL, TITLE="", XLAB="", YLAB="", VIOLIN_
   # PLOT_BARS="sterr"; ERROR_BAR_COLOURS=c("#636363", "#1c9099", "#de2d26");
   # PLOT_BARS=c("ci", "sterr"); ERROR_BAR_COLOURS=c("#636363", "#1c9099", "#de2d26");
   # PLOT_BARS=c(); ERROR_BAR_COLOURS=c("#636363", "#1c9099", "#de2d26");
-  # XCATEGOR=TRUE; LOGX=FALSE; LOGX_BASE=1; HSDX=TRUE; ALPHA=0.05; REGRESSX=FALSE
-  # XCATEGOR=FALSE; LOGX=FALSE; LOGX_BASE=1; HSDX=TRUE; ALPHA=0.05; REGRESSX=TRUE
+  # CATEGORICAL=TRUE; LOGX=FALSE; LOGX_BASE=1; HSD=TRUE; ALPHA=0.05; REGRESS=FALSE
+  # CATEGORICAL=FALSE; LOGX=FALSE; LOGX_BASE=1; HSD=TRUE; ALPHA=0.05; REGRESS=TRUE
   # SHOW_SAMPLE_SIZE=TRUE
 
   ### parse the formula and generate the dataframe with explicit interaction terms if expressed in the formula
@@ -96,10 +125,10 @@ violinplotter = function(formula, data=NULL, TITLE="", XLAB="", YLAB="", VIOLIN_
   }
 
   ### Are the explanatory variable/s are strictly categorical?
-  if (length(XCATEGOR) != ncol(df)-1) {
-    XCATEGOR = rep(XCATEGOR, times=ncol(df)-1)
+  if (length(CATEGORICAL) != ncol(df)-1) {
+    CATEGORICAL = rep(CATEGORICAL, times=ncol(df)-1)
   }
-  XCATEGOR[LOGX] = FALSE ### automatically convert factors into non-strictly categorcialy if they were set to be log-transformed!
+  CATEGORICAL[LOGX] = FALSE ### automatically convert factors into non-strictly categorcialy if they were set to be log-transformed!
 
   ### Which statistical bars do we plot?
   ERROR_BAR_COLOURS=rep(ERROR_BAR_COLOURS, times=3)[1:3] ### to make sure we have 3 error bar colours
@@ -120,14 +149,19 @@ violinplotter = function(formula, data=NULL, TITLE="", XLAB="", YLAB="", VIOLIN_
     ERROR_BAR_COLOURS[3] = orig_ERROR_BAR_COLOURS[3]
   } 
 
-  ### Do we have to perform Tukey's hones significant difference test across the explanatory variable/s?
-  if (length(HSDX) != ncol(df)-1) {
-    HSDX = rep(HSDX, times=ncol(df)-1)
+  ### Do we have to perform Mann-Whitney mean comparison test across the explanatory variable/s?
+  if (length(MANN_WHITNEY) != ncol(df)-1) {
+    MANN_WHITNEY = rep(MANN_WHITNEY, times=ncol(df)-1)
+  }
+
+  ### Do we have to perform Tukey's honest significant difference test across the explanatory variable/s?
+  if (length(HSD) != ncol(df)-1) {
+    HSD = rep(HSD, times=ncol(df)-1)
   }
 
    ### Do we have to regress the response variable against the explanatory variable/s?
-  if (length(REGRESSX) != ncol(df)-1) {
-    REGRESSX = rep(REGRESSX, times=ncol(df)-1)
+  if (length(REGRESS) != ncol(df)-1) {
+    REGRESS = rep(REGRESS, times=ncol(df)-1)
   }
 
   ### iterate across explanatory variables defined by the formula
@@ -154,23 +188,43 @@ violinplotter = function(formula, data=NULL, TITLE="", XLAB="", YLAB="", VIOLIN_
                                           COLOURS=VIOLIN_COLOURS[[i]],
                                           BAR_COLOURS=ERROR_BAR_COLOURS,
                                           CI=(1-ALPHA)*100,
-                                          XTICKS=XCATEGOR[i],
+                                          XTICKS=CATEGORICAL[i],
                                           LOG=LOGX[i],
                                           BASE=LOGX_BASE[i])
-    if (HSDX[i]==TRUE){
+    if (SHOW_MEANS | SHOW_SAMPLE_SIZE){
+      message("======================================================")
+      message(paste0("Means and/or sample sizes for: ", explanatory_var_names[i]))
+      message("======================================================")
+      MEANS_SIZES_out = show_means_sample_sizes(formula=formula,
+                                                data=data,
+                                                explanatory_variable_name=explanatory_var_names[i],
+                                                SHOW_MEANS=SHOW_MEANS,
+                                                SHOW_SAMPLE_SIZE=SHOW_SAMPLE_SIZE)
+    } else {MEANS_SIZES_out = NULL}
+    if (MANN_WHITNEY[i]){
+      message("======================================================")
+      message(paste0("Mann-Whitney Grouping (takes precedence over HSD): ", explanatory_var_names[i]))
+      message("======================================================")
+      MEAN_COMPARISON_out = mean_comparison_HSD(formula=formula,
+                                                data=data,
+                                                explanatory_variable_name=explanatory_var_names[i],
+                                                alpha=ALPHA,
+                                                LOG=LOGX[i],
+                                                BASE=LOGX_BASE[i],
+                                                PLOT=MANN_WHITNEY[i])
+    } else if (HSD[i]){
       message("======================================================")
       message(paste0("HSD Grouping: ", explanatory_var_names[i]))
       message("======================================================")
-      HSD_out = mean_comparison_HSD(formula=formula,
-                                    data=data,
-                                    explanatory_variable_name=explanatory_var_names[i],
-                                    alpha=ALPHA,
-                                    LOG=LOGX[i],
-                                    BASE=LOGX_BASE[i],
-                                    PLOT=TRUE,
-                                    SHOW_SAMPLE_SIZE=SHOW_SAMPLE_SIZE)
-    } else {HSD_out = NULL}
-    if (REGRESSX[i]==TRUE){
+      MEAN_COMPARISON_out = mean_comparison_HSD(formula=formula,
+                                                data=data,
+                                                explanatory_variable_name=explanatory_var_names[i],
+                                                alpha=ALPHA,
+                                                LOG=LOGX[i],
+                                                BASE=LOGX_BASE[i],
+                                                PLOT=HSD[i])
+    } else {MEAN_COMPARISON_out = NULL}
+    if (REGRESS[i]){
       message("======================================================")
       message(paste0("Linear Regressing: ", explanatory_var_names[i]))
       message("======================================================")
@@ -182,7 +236,7 @@ violinplotter = function(formula, data=NULL, TITLE="", XLAB="", YLAB="", VIOLIN_
                                         PLOT=TRUE,
                                         LINE_COL="gray")
     } else {REGRESS_out = NULL}
-    OUT[[i]] = c(HSD_out=HSD_out, REGRESS_out=REGRESS_out)
+    OUT[[i]] = c(MEANS_SIZES_out=MEANS_SIZES_out, MEAN_COMPARISON_out=MEAN_COMPARISON_out, REGRESS_out=REGRESS_out)
   }
   return(OUT)
 }

@@ -1,5 +1,4 @@
 # News
-## Version 2.0.1
+## Version 3.0.0
 
-Allowing for:
-- fix explanatory variable parsing error in regression line plotting module
+This is a major release where we added a nonparametric mean comparison - Mann-Whitney test, and setting this as the default method instead of Tukey's honest significant difference.
